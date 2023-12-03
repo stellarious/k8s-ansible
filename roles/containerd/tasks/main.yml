@@ -39,7 +39,7 @@
         repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
         state: present
 
-- name: Installing packages
+- name: Installing containerd package
   apt:
     update_cache: true
     name: containerd.io
