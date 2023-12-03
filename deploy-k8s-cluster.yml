@@ -1,0 +1,13 @@
+# deploy-k8s-cluster.yml
+---
+- import_playbook: playbooks/set-key.yml
+
+- hosts: k8s_masters
+  become: true
+  roles:
+    - containerd
+
+- hosts: k8s_workers
+  become: true
+  roles:
+    - containerd

@@ -1,0 +1,6 @@
+---
+# handlers file for roles/containerd
+- name: Restart containerd
+  service:
+    name: containerd
+    state: restarted

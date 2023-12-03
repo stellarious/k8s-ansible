@@ -1,0 +1,59 @@
+---
+- name: Enable kernel modules
+  modprobe:
+    name: "{{ item }}"
+    persistent: present
+  loop: "{{ kernel_modules }}"
+
+- name: Add kernel parameters to load at boot
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/k8s.conf
+    state: present
+  loop: "{{ kernel_parameters }}"
+
+- name: Installing packages
+  apt:
+    update_cache: true
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+
+- name: Setting up Docker repo
+  block:
+    - name: Install apt key
+      get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        #dest: /etc/apt/keyrings/docker.gpg
+        dest:  /etc/apt/trusted.gpg.d/docker.asc
+
+    - name: Setting permissions for apt key
+      file: 
+        name: /etc/apt/trusted.gpg.d/docker.asc
+        mode: a+r
+
+    - name: Add docker repo
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        state: present
+
+- name: Installing packages
+  apt:
+    update_cache: true
+    name: containerd.io
+
+- name: Set containerd directory
+  file:
+    name: /etc/containerd/
+    state: directory
+
+- name: Generate config.toml for containerd 
+  shell: containerd config default | tee /etc/containerd/config.toml
+  diff: true
+  notify: Restart containerd
+
+- name: Check containerd status
+  command: systemctl status containerd
+  changed_when: false
