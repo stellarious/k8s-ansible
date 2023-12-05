@@ -15,7 +15,7 @@
 
 - name: Installing packages
   apt:
-    update_cache: true
+    cache_valid_time: 3600
     pkg:
       - ca-certificates
       - curl
@@ -49,9 +49,25 @@
     name: /etc/containerd/
     state: directory
 
+- name: Check containerd config
+  command: grep "SystemdCgroup = true" /etc/containerd/config.toml
+  changed_when: no
+  ignore_errors: true
+  register: check_conf
+
 - name: Generate config.toml for containerd 
   shell: containerd config default | tee /etc/containerd/config.toml
   diff: true
+  when: check_conf.rc != 0
+  notify: Restart containerd
+
+- name: Enable cgroups for containerd
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: SystemdCgroup = false
+    replace: SystemdCgroup = true
+  diff: true
+  when: check_conf.rc != 0
   notify: Restart containerd
 
 - name: Check containerd status

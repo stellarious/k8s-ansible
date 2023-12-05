@@ -1,0 +1,8 @@
+---
+# tasks file for roles/system
+- name: Installing packages
+  apt:
+    cache_valid_time: 3600
+    pkg:
+      - telnet
+      - tree
